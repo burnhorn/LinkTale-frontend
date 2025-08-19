@@ -1,0 +1,84 @@
+<script lang="ts">
+  import { fly, fade } from 'svelte/transition';
+  import type { ChatMessage } from '$lib/stores';
+
+  export let message: ChatMessage;
+
+  const isUser = message.sender === 'user';
+  
+  function formatTime(timestamp: Date): string {
+    if (!timestamp) return '';
+    return new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  }
+</script>
+
+<div 
+  class="flex mb-3"
+  class:justify-end={isUser}
+  class:justify-start={!isUser}
+  in:fly={{ y: 20, duration: 400, delay: 50 }}
+  out:fade={{ duration: 200 }}
+>
+  <div 
+    class="flex items-end max-w-xs md:max-w-sm lg:max-w-md"
+    class:flex-row-reverse={isUser}
+    class:flex-row={!isUser}
+  >
+    <!-- AI 프로필 아이콘 -->
+    {#if !isUser}
+      <div class="self-start p-1.5 rounded-full mr-2 shrink-0" 
+           class:bg-pink-500={!message.isSystem && !message.isError}
+           class:bg-yellow-500={message.isError}
+           class:bg-slate-600={message.isSystem}>
+        {#if message.isError}
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        {:else if message.isSystem}
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        {:else}
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 16h4.673M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> <!-- Simple AI/Robot Icon -->
+        {/if}
+      </div>
+    {/if}
+
+    <!-- 말풍선 컨테이너 -->
+    <div
+      class="px-4 py-3 rounded-xl shadow-md"
+      class:bg-user-bubble={isUser}
+      class:text-white={isUser}
+      class:rounded-br-none={isUser}
+      class:bg-ai-bubble={!isUser && !message.isError && !message.isSystem}
+      class:text-brand-text-light={!isUser && !message.isError && !message.isSystem}
+      class:bg-yellow-100={message.isError}
+      class:text-yellow-800={message.isError}
+      class:border={message.isError}
+      class:border-yellow-400={message.isError}
+      class:bg-slate-600={message.isSystem}
+      class:text-slate-200={message.isSystem}
+      class:rounded-bl-none={(!isUser && !message.isError && !message.isSystem) || message.isSystem}
+    >
+      <!-- 1. 메시지 본문 (텍스트 + 이미지) -->
+      <div class="text-sm whitespace-pre-wrap">{message.text}</div>
+      
+      {#if message.imageUrl}
+        <img
+          src={message.imageUrl}
+          alt="AI generated illustration"
+          class="mt-2 rounded-lg max-w-full h-auto max-h-48 object-contain shadow-lg border-2 border-slate-600"
+        />
+      {/if}
+
+      <!-- 2. AI가 스트리밍 중일 때만 표시되는 로딩 표시 -->
+      {#if message.isLoading}
+        <div class="flex items-center mt-2">
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary mr-2"></div>
+          <p class="text-xs italic opacity-70">이야기를 쓰는 중...</p>
+        </div>
+      {/if}
+      
+      <!-- 3. 타임스탬프 (항상 표시) -->
+      <p class="text-xs opacity-70 mt-1" class:text-right={isUser} class:text-left={!isUser}>
+        {formatTime(message.timestamp)}
+      </p>
+    </div>
+  </div>
+</div>
