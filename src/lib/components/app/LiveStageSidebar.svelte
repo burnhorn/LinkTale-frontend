@@ -3,6 +3,7 @@
 
   import type { ChatMessage, Quest } from '../../types';
   import Icon from '$lib/Icon.svelte';
+  import ChatMessageItem from '$lib/ChatMessageItem.svelte';
 
   // --- Props (기존과 동일) ---
   export let messages: ChatMessage[] = [];
@@ -102,21 +103,7 @@
     <!-- Chat History -->
     <div class="flex-1 p-4 overflow-y-auto space-y-4">
       {#each messages as msg (msg.id)}
-        <div class="flex items-end gap-2" class:justify-end={msg.sender === 'user'} class:justify-start={msg.sender === 'ai'}>
-          {#if msg.sender === 'ai'}
-            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center">
-              <Icon name="robot" className="h-5 w-5 text-cyan-400"/>
-            </div>
-          {/if}
-          <div class="max-w-xs md:max-w-sm rounded-xl px-4 py-2.5" class:bg-blue-600={msg.sender === 'user'} class:text-white={msg.sender === 'user'} class:rounded-br-none={msg.sender === 'user'} class:bg-slate-700={msg.sender === 'ai'} class:text-slate-200={msg.sender === 'ai'} class:rounded-bl-none={msg.sender === 'ai'}>
-            <p class="text-sm leading-relaxed">{msg.text}</p>
-            {#if msg.text}
-            <div class="text-xs opacity-60 text-right mt-1">
-              {msg.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true })}
-            </div>
-            {/if}
-          </div>
-        </div>
+        <ChatMessageItem message={msg} />
       {/each}
       {#if isAiTyping}
         <div class="flex items-end gap-2 justify-start">

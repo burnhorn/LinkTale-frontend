@@ -23,9 +23,11 @@
     "@lottiefiles/lottie-player": "^2.0.12",
     "@motionone/svelte": "^10.16.4",
     "@sveltejs/kit": "^2.27.0",
+    "@types/marked": "^5.0.2",
     "chart.js": "^4.5.0",
     "chartjs-chart-wordcloud": "^4.4.4",
     "jwt-decode": "^4.0.0",
+    "marked": "^16.2.0",
     "motion": "^12.23.12",
     "uuid": "^11.1.0"
   }

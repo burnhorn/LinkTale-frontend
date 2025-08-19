@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fly, fade } from 'svelte/transition';
-  import type { ChatMessage } from '$lib/stores';
+  import type { ChatMessage } from './types';
+  import { marked } from 'marked';
 
   export let message: ChatMessage;
 
@@ -57,7 +58,7 @@
       class:rounded-bl-none={(!isUser && !message.isError && !message.isSystem) || message.isSystem}
     >
       <!-- 1. 메시지 본문 (텍스트 + 이미지) -->
-      <div class="text-sm whitespace-pre-wrap">{message.text}</div>
+      <div class="text-sm prose prose-invert max-w-none">{@html marked(message.text || '')}</div>
       
       {#if message.imageUrl}
         <img
