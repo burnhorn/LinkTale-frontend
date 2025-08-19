@@ -4,7 +4,7 @@
 	import NavButton from './NavButton.svelte';
 	import { auth } from '$lib/authStore';
 	import { logoutUser, sendAction, downloadStoryAsPdf } from '$lib/apiService';
-	import { audioStore, isLoading } from '$lib/stores';
+	import { audioStore, isAudioLoading } from '$lib/stores';
 
 	// Svelte 5: Props are declared with `let` or `export let`.
 	// We define the types for the function props that will be passed down from the parent.
@@ -28,7 +28,7 @@
 	}
 
 	function handleAudioAction() {
-		if ($isLoading) return; // 로딩 중에는 아무것도 하지 않음
+		if ($isAudioLoading) return; // 로딩 중에는 아무것도 하지 않음
 
 		if ($audioStore.src) {
 			audioStore.play();
@@ -66,8 +66,8 @@
 		<NavButton
 			on:click={handleAudioAction}
 			iconName="audio"
-			label={$isLoading ? '생성 중...' : $audioStore.src ? '오디오 드라마 듣기' : '오디오 드라마 만들기'}
-			disabled={$isLoading}
+			label={$isAudioLoading ? '생성 중...' : $audioStore.src ? '오디오 드라마 듣기' : '오디오 드라마 만들기'}
+			disabled={$isAudioLoading}
 		/>
 
 		<div class="px-4 pt-6 pb-2">

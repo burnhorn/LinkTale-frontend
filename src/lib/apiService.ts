@@ -7,6 +7,7 @@ import {
 	storyPages,
 	currentStoryTitle,
 	isLoading as globalIsLoading,
+	isAudioLoading,
 	audioStore,
 	isReady
 } from '$lib/stores';
@@ -166,7 +167,7 @@ class WebSocketService {
               audioStore.setAudio(audioData.audio_url);
               chatMessages.addSystemMessage("오디오 드라마 생성이 완료되었어요! 🎧 하단의 플레이어로 감상해보세요.");
           }
-          globalIsLoading.set(false);
+          isAudioLoading.set(false);
           break;
         case 'page_created':
           const pageData = parsed.data;
@@ -346,6 +347,9 @@ export function sendAction(action: 'generate_audio', content: string = '🎧 오
     if (!browser) return;
     // Add a system message immediately to give user feedback.
     chatMessages.addSystemMessage(content);
+    if (action === 'generate_audio') {
+        isAudioLoading.set(true);
+    }
     webSocketService.sendMessage({ content: content, action: action });
 }
 

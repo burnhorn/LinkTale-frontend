@@ -207,6 +207,7 @@ export const storyPages = createStoryPageStore();
 
 export const currentStoryTitle: Writable<string> = writable("나만의 AI 동화");
 export const isLoading: Writable<boolean> = writable(false);
+export const isAudioLoading: Writable<boolean> = writable(false);
 export const sidebarOpen: Writable<boolean> = writable(true);
 export const audioStore = createAudioStore();
 export const isAuthModalOpen: Writable<boolean> = writable(false);
