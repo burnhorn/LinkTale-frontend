@@ -162,9 +162,10 @@ class WebSocketService {
                 });
           break;
         case 'audio_generated':
-          const audioData = parsed.data.final_audio_data;
-          if (audioData && audioData.audio_url) {
-              audioStore.setAudio(audioData.audio_url);
+          // console.log('Received audio_generated event:', parsed); // 전체 데이터 확인용 로그
+          const audioUrl = parsed.data.audio_url;
+          if (audioUrl) {
+              audioStore.setAudio(audioUrl);
               chatMessages.addSystemMessage("오디오 드라마 생성이 완료되었어요! 🎧 하단의 플레이어로 감상해보세요.");
           }
           isAudioLoading.set(false);
