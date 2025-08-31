@@ -1,5 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
-import type { LogEntry, ChatMessage, StoryPage, AudioState, ViewMode } from '$lib/types';
+import type { LogEntry, ChatMessage, StoryPage, AudioState, ViewMode, Scene, ChatHistoryResponse } from '$lib/types';
 
 function createAudioStore() {
   const { subscribe, update, set } = writable<AudioState>({
@@ -29,51 +29,70 @@ function createAudioStore() {
 
 
 function createChatMessageStore() {
-  const { subscribe, update, set } = writable<ChatMessage[]>([]);
+  const { subscribe, set, update } = writable<ChatMessage[]>([]);
 
   return {
     subscribe,
     set,
-    initializeMessages:  (history: LogEntry[]) => {
-      const formattedMessages: ChatMessage[] = history.map(log => {
-        let text = log.content || "";
-        let imageUrl: string | null = null;
-        
-        // 백엔드에서 온 이미지 로그 처리
-        if (log.message_type === 'image') {
-          try { // ChatMessage 객체
-            imageUrl = log.image_url || null;
-            // image_caption이 있다면 text로 사용하고, 없다면 빈 문자열로 둡니다.
-            text = log.image_caption || ""; 
-          } catch (e) {
-            console.error("Failed to parse image log content:", log.content);
-            text = "[이미지 로딩 실패]";
-          }
-        }
+    
+    initializeFromHistory: (history: ChatHistoryResponse) => {
+      // 1. 'logs' 배열을 'ChatMessage' 배열로 변환합니다.
+      const messagesFromLogs: ChatMessage[] = (history.logs || []).map(log => ({
+        id: log.id.toString(),
+        sender: log.sender,
+        text: log.content || "",
+        imageUrl: log.message_type === 'image' ? log.image_url : null,
+        timestamp: new Date(log.created_at),
+        isSystem: log.message_type === 'system' || log.message_type === 'audio',
+      }));
 
-        // 백엔드 LogEntry 객체를 프론트엔드 ChatMessage 객체로 변환
-        return {
-          id: log.id,
-          sender: log.sender as 'user' | 'ai',
-          text: text,
-          imageUrl: imageUrl,
-          timestamp: new Date(log.created_at), // 필드명을 백엔드 모델과 일치 (created_at)
-          // ✅ message_type에 따라 isSystem 플래그 설정
-          // log.message_type의 값이 'system' 이거나 또는 'audio' 라면 isSystem을 true로 설정하고, 둘 다 아니라면 false로 설정
-          isSystem: log.message_type === 'system' || log.message_type === 'audio',
-          isLoading: false,
-          isError: false,
-        };
-      });
-      
-      // 스토어의 전체 상태를 새로 가져온 기록으로 교체합니다.
-      set(formattedMessages);
+      // 2. 'scenes' 배열을 'ChatMessage' 배열로 변환합니다.
+      const messagesFromScenes: ChatMessage[] = (history.scenes || [])
+        .flatMap(scene => {
+          // 각 scene에서 텍스트 메시지와 이미지 메시지를 별도로 생성합니다.
+          const sceneMessages: ChatMessage[] = [];
+          
+          // 2-1. 장면 텍스트 메시지 (항상 존재)
+          sceneMessages.push({
+            id: `scene-${scene.id}`, // 고유 ID를 위해 접두사 추가
+            sender: 'ai',
+            // 확정된 장면 텍스트임을 명시
+            text: `[${scene.scene_number}번째 장면]\n${scene.text_content}`,
+            imageUrl: null,
+            // 백엔드 Scene 모델에 created_at => new Date()를 사용하여 Date 객체로 변환
+            timestamp: new Date(scene.created_at),
+            isSystem: false, 
+          });
+
+          // 2-2. 장면 이미지 메시지 (이미지가 있을 경우에만)
+          if (scene.sas_url) {
+            sceneMessages.push({
+              id: `scene-img-${scene.id}`,
+              sender: 'ai',
+              text: scene.text_content, // 캡션을 텍스트로 사용
+              imageUrl: scene.sas_url,
+              timestamp: new Date(scene.created_at),
+              isSystem: false,
+            });
+          }
+          
+          return sceneMessages;
+        });
+
+      // 3. 변환된 두 배열을 합칩니다.
+      const allMessages = [...messagesFromLogs, ...messagesFromScenes];
+
+      // 4. 최종적으로 시간 순서대로 정렬합니다.
+      allMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      // 5. 스토어 상태를 업데이트합니다.
+      set(allMessages);
     },
     // 🔥 addMessage는 파라미터로 객체 하나만 받습니다.
     addMessage: (messageData: { 
       sender: 'user' | 'ai'; 
       text: string; 
-      imageUrl?: string | null 
+      imageUrl?: string | null;
     }) => {
       const newMessage: ChatMessage = {
         id: Date.now() + Math.random(),
@@ -203,6 +222,29 @@ function createStoryPageStore() {
     clearPages: () => set([])
   };
 }
+
+
+function createSceneStore() {
+  const { subscribe, set, update } = writable<Scene[]>([]);
+
+  return {
+    subscribe,
+    initializeScenes: (scenes: Scene[]) => {
+      // 백엔드에서 받은 Scene 데이터로 스토어를 초기화합니다.
+      // 필요하다면 여기서 프론트엔드에 맞게 데이터를 가공할 수 있습니다.
+      set(scenes);
+    },
+    // 나중에 이미지 수정 후 특정 Scene만 업데이트하는 함수 등을 추가할 수 있습니다.
+    updateSceneImage: (sceneId: number, newImageUrl: string) => {
+      update(scenes => {
+        return scenes.map(scene => 
+          scene.id === sceneId ? { ...scene, imageUrl: newImageUrl } : scene
+        );
+      });
+    }
+  };
+}
+
 export const storyPages = createStoryPageStore();
 
 export const currentStoryTitle: Writable<string> = writable("나만의 AI 동화");
@@ -221,3 +263,6 @@ export const viewMode: Writable<ViewMode> = writable('chat');
 
 /** 앱이 백엔드와 통신할 준비가 되었는지 나타내는 전역 상태 */
 export const isReady = writable<boolean>(false);
+
+
+export const storyScenes = createSceneStore();

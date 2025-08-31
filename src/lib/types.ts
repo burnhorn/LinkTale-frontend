@@ -134,3 +134,22 @@ export interface Quest {
 	title: string;
 	description: string;
 }
+
+
+export interface Scene {
+  id: number;
+  scene_number: number;
+  text_content: string;
+  illustration_prompt?: string | null;
+  characters_in_scene: string[]; // "A list of the names of the characters in this scene"
+  blob_url?: string | null; // DB에 저장될 영구적인 URL
+  sas_url?: string | null; // 클라이언트에게 임시로 제공될 SAS URL
+  created_at: string; // API 응답이 문자열이므로 string으로 정의
+}
+
+
+// 백엔드의 /history API 응답 전체의 구조를 정의하는 타입.
+export interface ChatHistoryResponse {
+  logs: LogEntry[];
+  scenes: Scene[];
+}

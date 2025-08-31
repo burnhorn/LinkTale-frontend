@@ -9,9 +9,10 @@ import {
 	isLoading as globalIsLoading,
 	isAudioLoading,
 	audioStore,
-	isReady
+	isReady,
+  storyScenes
 } from '$lib/stores';
-import type { LogEntry } from '$lib/types';
+import type { LogEntry, Scene, ChatHistoryResponse } from '$lib/types';
 import { get } from 'svelte/store';
 import { auth } from '$lib/authStore';
 
@@ -156,9 +157,9 @@ class WebSocketService {
         case 'image_generated':
           const { image_url, image_caption } = parsed.data;
           chatMessages.addMessage({ 
-                    sender: 'ai', 
+                    sender: 'ai',
                     text: image_caption || '', 
-                    imageUrl: image_url 
+                    imageUrl: image_url
                 });
           break;
         case 'audio_generated':
@@ -182,7 +183,7 @@ class WebSocketService {
         case 'error':
           chatMessages.setErrorOnLastAiMessage(parsed.data);
           break;
-        case 'tool_end':
+        case 'end_of_turn':
           globalIsLoading.set(false);
           chatMessages.finishLastAiMessage();
           break;
@@ -192,37 +193,51 @@ class WebSocketService {
     }
     
     private async fetchHistory() {
-        if (!this.sessionId || !browser) return;
-        globalIsLoading.set(true);
-        try {
-            const token = sessionStorage.getItem('user_token');
-            const headers: HeadersInit = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            
-            const response = await fetch(`${BASE_HTTP_URL}/history/${this.sessionId}`, { headers });
-            if (!response.ok) throw new Error(`Failed to fetch history: ${response.statusText}`);
-            
-            const history: LogEntry[] = await response.json();
-
-            if (history && history.length > 0) {
-                chatMessages.initializeMessages(history);
-              const hasAudio = history.some(log => log.message_type === 'audio');
+      if (!this.sessionId || !browser) return;
+      globalIsLoading.set(true);
+      try {
+          const token = sessionStorage.getItem('user_token');
+          const headers: HeadersInit = {};
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          
+          const response = await fetch(`${BASE_HTTP_URL}/history/${this.sessionId}`, { headers });
+          if (!response.ok) throw new Error(`Failed to fetch history: ${response.statusText}`);
+          
+          // 1. API 응답을 새로운 ChatHistoryResponse 타입으로 받습니다.
+          const responseData: ChatHistoryResponse = await response.json();
+          // console.log(responseData)
+          // 2. 응답 데이터가 유효한지 확인합니다.
+          if (responseData && (responseData.logs?.length || responseData.scenes?.length)) {
+        
+              // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+              //      'responseData' 객체 전체를 스토어 함수에 전달합니다.
+              // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+              chatMessages.initializeFromHistory(responseData);
+              storyScenes.initializeScenes(responseData.scenes || []); // storyScenes는 scenes 배열만 받음
+              
+              // -----------------------------------------------------------
+              //    오디오 확인 로직은 initializeFromHistory 내부에서 처리하거나,
+              //    여기서 responseData.logs를 사용하여 수행할 수 있습니다.
+              const hasAudio = responseData.logs?.some(log => log.message_type === 'audio');
               if (hasAudio) {
                   this.fetchLatestAudio();
-                }
-      } else {
-        const hasWelcomed = sessionStorage.getItem('hasBeenWelcomed');
-        if (!hasWelcomed) {
-          chatMessages.addSystemMessage("안녕하세요, 꼬마 창작자님! 오늘은 어떤 멋진 이야기를 만들어 볼까요? 제게 이야기를 들려달라고 하거나 재미있는 그림을 그려달라고 해보세요! 🎨✨");
-          sessionStorage.setItem('hasBeenWelcomed', 'true');
-        }          
+              }
+
+          } else {
+              // 로그와 장면이 모두 없을 때만 새로운 세션으로 간주하고 환영 메시지를 보냅니다.
+              const hasWelcomed = sessionStorage.getItem('hasWelcomed');
+              if (!hasWelcomed) {
+                  chatMessages.addSystemMessage("안녕하세요, 꼬마 창작자님! 오늘은 어떤 멋진 이야기를 만들어 볼까요? 제게 이야기를 들려달라고 하거나 재미있는 그림을 그려달라고 해보세요! 🎨✨");
+                  sessionStorage.setItem('hasWelcomed', 'true');
+              }
+          }
+      } catch (error) {
+          console.error("Fetch history error:", error); // 디버깅을 위해 콘솔 에러 추가
+          chatMessages.addSystemMessage("이전 대화 기록을 불러오는 데 실패했습니다.");
+      } finally {
+          globalIsLoading.set(false);
       }
-    } catch (error) {
-      chatMessages.addSystemMessage("이전 대화 기록을 불러오는 데 실패했습니다.");
-    } finally {
-      globalIsLoading.set(false);
     }
-  }
 
     private showWelcomeMessageIfNeeded() {
         if (!browser) return;
