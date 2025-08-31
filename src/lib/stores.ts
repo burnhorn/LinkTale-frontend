@@ -69,7 +69,8 @@ function createChatMessageStore() {
             sceneMessages.push({
               id: `scene-img-${scene.id}`,
               sender: 'ai',
-              text: scene.text_content, // 캡션을 텍스트로 사용
+              text: "",
+              // text: scene.text_content, // 캡션을 텍스트로 사용
               imageUrl: scene.sas_url,
               timestamp: new Date(scene.created_at),
               isSystem: false,
