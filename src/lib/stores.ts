@@ -144,18 +144,78 @@ function createChatMessageStore() {
         }
       });
     },
-    // `image_generated` 이벤트를 처리하기 위한 함수
-    addAiImageMessage: (imageUrl: string, textContent: string) => {
-      const newImageMessage = {
-            id: Date.now() + Math.random(),
-            sender: 'ai' as const,
-            text: textContent,
-            imageUrl: imageUrl,
-            isLoading: false,
-            timestamp: new Date()
-        };
-        update(messages => [...messages, newImageMessage]);
+    
+    // ✅ 1. 'addAiImageMessage' 함수를 수정하여 'scene_id'를 받도록 변경
+    addAiImageMessage: (imageUrl: string, textContent: string, sceneNumber: number) => {
+      const newImageMessage: ChatMessage = {
+        // ID를 임시 형식으로 만들고,
+        id: `temp-scene-num-${sceneNumber}`, 
+        sender: 'ai' as const,
+        text: textContent,
+        imageUrl: imageUrl,
+        isLoading: false,
+        timestamp: new Date(),
+        // sceneId 필드를 추가하여 나중에 진짜 ID를 찾을 단서로 남깁니다.
+        sceneId: sceneNumber, 
+      };
+      update(messages => [...messages, newImageMessage]);
     },
+
+    // ✅ 2. 'syncWithScenes' 함수를 새로 추가 (DB 저장 완료 후 정상적인 scenes id 프-백 동기화용)
+    syncWithScenes: (scenes: Scene[]) => {
+      update(messages => {
+        return messages.map(msg => {
+          if (msg.sceneId && typeof msg.id === 'string' && msg.id.startsWith('temp-scene-num-')) {
+            const matchingScene = scenes.find(s => s.scene_number === msg.sceneId);
+            
+            if (matchingScene) {
+              console.log(`[Sync] 메시지 ID 동기화: ${msg.id} -> scene-img-${matchingScene.id}`);
+              return {
+                ...msg,
+                // ID를 '임시 출입증'에서 '주민등록번호'로 교체합니다!
+                id: `scene-img-${matchingScene.id}` 
+              };
+            }
+          }
+          return msg;
+        });
+      });
+    },
+
+    // // `image_generated` 이벤트를 처리하기 위한 함수
+    // addAiImageMessage: (imageUrl: string, textContent: string) => {
+    //   const newImageMessage = {
+    //         id: Date.now() + Math.random(),
+    //         sender: 'ai' as const,
+    //         text: textContent,
+    //         imageUrl: imageUrl,
+    //         isLoading: false,
+    //         timestamp: new Date()
+    //     };
+    //     update(messages => [...messages, newImageMessage]);
+    // },
+
+    // 'image_edit_complete' 이벤트를 처리하기 위한 새로운 함수를 추가합니다.
+    updateMessageImage: (sceneId: number, newImageUrl: string) => {
+      // update를 사용하여 내부 상태를 변경합니다.
+      update(messages => {
+        const targetMessageIndex = messages.findIndex(m => m.id === `scene-img-${sceneId}`);
+        
+        if (targetMessageIndex > -1) {
+          console.log(`[Store] 이미지 업데이트: scene-img-${sceneId}`);
+          const newMessages = [...messages]; // 배열 복사 (불변성 유지)
+          // 특정 메시지 객체만 복사 후 imageUrl을 교체
+          newMessages[targetMessageIndex] = {
+            ...newMessages[targetMessageIndex], 
+            imageUrl: newImageUrl,
+          };
+          return newMessages;
+        }
+        // 일치하는 메시지가 없으면 기존 상태 유지
+        return messages;
+      });
+    },
+
     // `tool_end` 이벤트 등에서 로딩 상태를 종료하기 위한 함수
     finishLastAiMessage: () => {
       update(messages => {

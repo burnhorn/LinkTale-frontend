@@ -21,6 +21,7 @@ export interface ChatMessage {
   isLoading?: boolean;
   isError?: boolean;
   nodeName?: string;
+  sceneId?: number;
 }
 
 /**

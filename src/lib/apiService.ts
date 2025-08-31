@@ -21,8 +21,9 @@ const	PUBLIC_CHAT_API_BASE_URL = env.PUBLIC_CHAT_API_BASE_URL;
 const	PUBLIC_EXPORT_API_BASE_URL = env.PUBLIC_EXPORT_API_BASE_URL;
 const	PUBLIC_TOKEN_API_BASE_URL = env.PUBLIC_TOKEN_API_BASE_URL;
 const	PUBLIC_WS_BASE_URL = env.PUBLIC_WS_BASE_URL;
+const	PUBLIC_SCENES_API_BASE_URL = env.PUBLIC_SCENES_API_BASE_URL;
 
-// 💡 백엔드 주소 확인 및 session_id를 동적으로 추가하도록 변경
+// 💡 백엔드 주소 확인 및 session_id를 동적으로 추가하도록 변경 
 // HTTP URL은 슬래시(/)로 시작하는 경로만 남깁니다.
 const BASE_HTTP_URL = PUBLIC_CHAT_API_BASE_URL;
 const BASE_HTTP_URL_export = PUBLIC_EXPORT_API_BASE_URL;
@@ -154,14 +155,32 @@ class WebSocketService {
         case 'token':
           chatMessages.updateLastAiMessage(parsed.data, parsed.node_name);
           break;
-        case 'image_generated':
-          const { image_url, image_caption } = parsed.data;
-          chatMessages.addMessage({ 
-                    sender: 'ai',
-                    text: image_caption || '', 
-                    imageUrl: image_url
-                });
+        // ✅ 1. 'image_generated' 이벤트 처리 (이미지 메시지 '생성')
+        // 백엔드가 이미지를 성공적으로 만들었다는 신호입니다.
+        // 이 시점의 메시지는 아직 '임시 출입증' 상태일 수 있습니다.
+        case 'image_generated': { // case 블록 내에서 변수 선언을 위해 중괄호 사용
+          const { image_url, image_caption, scene_id } = parsed.data;
+          
+          // chatMessages 스토어에 새로운 AI 이미지 메시지를 '추가'합니다.
+          // 이 메시지는 나중에 'scenes_updated' 이벤트로 ID가 업데이트 될 것입니다.
+          chatMessages.addAiImageMessage(image_url, image_caption || '', scene_id);
           break;
+        }
+
+        // ✅ 2. 'scenes_updated' 이벤트 처리 (장면 목록 '업데이트' 및 ID '확정')
+        // 백엔드가 대화 기록을 데이터베이스에 성공적으로 저장(장면 확정)했다는 신호입니다.
+        case 'scenes_updated': {
+          const { scenes } = parsed.data; // 백엔드로부터 받은 장면 목록 전체
+          
+          // storyScenes 스토어를 최신 상태로 업데이트합니다.
+          // 책장(Bookshelf)이나 스토리 리더(StoryReader)가 이 데이터를 사용합니다.
+          storyScenes.initializeScenes(scenes);
+
+          // chatMessages 스토어와 동기화하여 '임시 출입증'을 '주민등록번호'로 교체합니다.
+          // 이 함수는 stores.ts에 새로 만들어야 합니다.
+          chatMessages.syncWithScenes(scenes);
+          break;
+        }
         case 'audio_generated':
           // console.log('Received audio_generated event:', parsed); // 전체 데이터 확인용 로그
           const audioUrl = parsed.data.audio_url;
@@ -180,25 +199,17 @@ class WebSocketService {
             pageData.imageCaption
           );
           break;
-          case 'image_edit_complete':
-            const { scene_id, new_image_url } = parsed.data;
-            // storyScenes 스토어를 업데이트하여 책장 등에서 이미지가 바뀌도록 합니다.
-            storyScenes.updateSceneImage(scene_id, new_image_url);
-            
-            // chatMessages 스토어도 업데이트하여 채팅창의 이미지를 교체합니다.
-            chatMessages.update(messages => {
-              const targetMessageIndex = messages.findIndex(m => m.id === `scene-img-${scene_id}`);
-              if (targetMessageIndex > -1) {
-                const newMessages = [...messages];
-                newMessages[targetMessageIndex] = {
-                  ...newMessages[targetMessageIndex],
-                  imageUrl: new_image_url
-                };
-                return newMessages;
-              }
-              return messages;
-            });
-            break;
+        case 'image_edit_complete': {
+          const { scene_id, new_image_url } = parsed.data;
+          
+          // 1. Scene 목록 상태 업데이트 요청
+          storyScenes.updateSceneImage(scene_id, new_image_url);
+          
+          // 2. 채팅 메시지 상태 업데이트 요청
+          chatMessages.updateMessageImage(scene_id, new_image_url);
+          
+          break;
+        }
         case 'error':
           chatMessages.setErrorOnLastAiMessage(parsed.data);
           break;
@@ -455,7 +466,7 @@ export function logoutAndResetSession() {
  */
 export async function editSceneImage(sceneId: number, prompt: string, imageBlob: Blob) {
   if (!browser) return;
-
+  
   const sessionId = webSocketService.getSessionId();
   if (!sessionId) {
     throw new Error("활성화된 세션이 없습니다.");
@@ -463,6 +474,10 @@ export async function editSceneImage(sceneId: number, prompt: string, imageBlob:
 
   const token = sessionStorage.getItem('user_token');
   const headers: HeadersInit = {};
+
+  // ✅ 'session-id' 헤더를 추가합니다.
+  headers['session-id'] = sessionId;
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -474,7 +489,7 @@ export async function editSceneImage(sceneId: number, prompt: string, imageBlob:
 
   // SvelteKit의 fetch를 사용하여 PUT 요청을 보냅니다.
   // 백엔드 API 주소 형식 `/scenes/{scene_id}/image` 에 맞춥니다.
-  const response = await fetch(`${BASE_HTTP_URL}/scenes/${sceneId}/image`, {
+  const response = await fetch(`${PUBLIC_SCENES_API_BASE_URL}/scenes/${sceneId}/image`, {
     method: 'PUT',
     headers, // 인증 헤더를 포함합니다.
     body: formData, // JSON.stringify 대신 FormData를 그대로 보냅니다.
@@ -482,6 +497,7 @@ export async function editSceneImage(sceneId: number, prompt: string, imageBlob:
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error("API Error Response:", errorData); 
     throw new Error(errorData.detail || '이미지 수정에 실패했습니다.');
   }
 
