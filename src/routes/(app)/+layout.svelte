@@ -8,6 +8,7 @@
   import AuthModal from '$lib/components/app/AuthModal.svelte';
   import MobileNav from '$lib/components/app/MobileNav.svelte';
   import AudioPlayer from '$lib/AudioPlayer.svelte';
+  import ImageEditorModal from '$lib/components/app/ImageEditorModal.svelte';
   import type { StoryPage, Quest } from '$lib/types';
   import { chatMessages, storyPages, isAuthModalOpen, viewMode, audioStore } from '$lib/stores';
   import Icon from '$lib/Icon.svelte';
@@ -223,6 +224,7 @@
       onSwitch={(newMode) => (authModalMode = newMode)}
     />
   {/if}
+  <ImageEditorModal />
 </div>
 
 <style>

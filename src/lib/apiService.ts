@@ -180,6 +180,25 @@ class WebSocketService {
             pageData.imageCaption
           );
           break;
+          case 'image_edit_complete':
+            const { scene_id, new_image_url } = parsed.data;
+            // storyScenes 스토어를 업데이트하여 책장 등에서 이미지가 바뀌도록 합니다.
+            storyScenes.updateSceneImage(scene_id, new_image_url);
+            
+            // chatMessages 스토어도 업데이트하여 채팅창의 이미지를 교체합니다.
+            chatMessages.update(messages => {
+              const targetMessageIndex = messages.findIndex(m => m.id === `scene-img-${scene_id}`);
+              if (targetMessageIndex > -1) {
+                const newMessages = [...messages];
+                newMessages[targetMessageIndex] = {
+                  ...newMessages[targetMessageIndex],
+                  imageUrl: new_image_url
+                };
+                return newMessages;
+              }
+              return messages;
+            });
+            break;
         case 'error':
           chatMessages.setErrorOnLastAiMessage(parsed.data);
           break;
@@ -425,4 +444,47 @@ export function logoutAndResetSession() {
     if (!browser) return;
     webSocketService.disconnect();
     webSocketService.start();
+}
+
+
+/**
+ * AI에게 장면 이미지 수정을 요청합니다.
+ * @param sceneId 수정할 장면의 ID
+ * @param prompt 사용자가 입력한 수정 요청 프롬프트
+ * @param imageBlob 캔버스에서 생성된 이미지 파일 (Blob)
+ */
+export async function editSceneImage(sceneId: number, prompt: string, imageBlob: Blob) {
+  if (!browser) return;
+
+  const sessionId = webSocketService.getSessionId();
+  if (!sessionId) {
+    throw new Error("활성화된 세션이 없습니다.");
+  }
+
+  const token = sessionStorage.getItem('user_token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  // 백엔드가 Form 데이터를 기대하므로 FormData 객체를 생성합니다.
+  const formData = new FormData();
+  formData.append('modification_request', prompt);
+  formData.append('file', imageBlob, 'edited-image.png'); // 세 번째 인자는 파일명입니다.
+
+  // SvelteKit의 fetch를 사용하여 PUT 요청을 보냅니다.
+  // 백엔드 API 주소 형식 `/scenes/{scene_id}/image` 에 맞춥니다.
+  const response = await fetch(`${BASE_HTTP_URL}/scenes/${sceneId}/image`, {
+    method: 'PUT',
+    headers, // 인증 헤더를 포함합니다.
+    body: formData, // JSON.stringify 대신 FormData를 그대로 보냅니다.
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || '이미지 수정에 실패했습니다.');
+  }
+
+  // 백엔드가 202 Accepted를 반환하므로, 특별한 데이터 없이 성공 여부만 확인합니다.
+  return response.status === 202;
 }

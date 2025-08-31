@@ -57,7 +57,8 @@ function createChatMessageStore() {
             id: `scene-${scene.id}`, // 고유 ID를 위해 접두사 추가
             sender: 'ai',
             // 확정된 장면 텍스트임을 명시
-            text: `[${scene.scene_number}번째 장면]\n${scene.text_content}`,
+            text: `${scene.scene_number}번째 장면을 감상해 보세요!\n(이미지를 누르면 변경도 가능해요)🎨\n`,
+            // text: `[${scene.scene_number}번째 장면]\n${scene.text_content}`,
             imageUrl: null,
             // 백엔드 Scene 모델에 created_at => new Date()를 사용하여 Date 객체로 변환
             timestamp: new Date(scene.created_at),
@@ -69,8 +70,8 @@ function createChatMessageStore() {
             sceneMessages.push({
               id: `scene-img-${scene.id}`,
               sender: 'ai',
-              text: "",
-              // text: scene.text_content, // 캡션을 텍스트로 사용
+              // text: "",
+              text: scene.text_content, // 캡션을 텍스트로 사용
               imageUrl: scene.sas_url,
               timestamp: new Date(scene.created_at),
               isSystem: false,
@@ -267,3 +268,20 @@ export const isReady = writable<boolean>(false);
 
 
 export const storyScenes = createSceneStore();
+
+
+/**
+ * 이미지 편집 모달의 상태를 관리하는 스토어.
+ * - isOpen: 모달이 열려있는지 여부
+ * - sceneId: 수정할 장면(Scene)의 고유 ID
+ * - imageUrl: 캔버스에 초기에 로드할 이미지 URL
+ */
+export const imageEditorModalState = writable<{
+  isOpen: boolean;
+  sceneId: number | null;
+  imageUrl: string | null;
+}>({
+  isOpen: false,
+  sceneId: null,
+  imageUrl: null,
+});

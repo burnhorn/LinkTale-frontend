@@ -2,6 +2,8 @@
   import { fly, fade } from 'svelte/transition';
   import type { ChatMessage } from './types';
   import { marked } from 'marked';
+  import Icon from "./Icon.svelte";
+  import { imageEditorModalState } from '$lib/stores';
 
   export let message: ChatMessage;
 
@@ -10,6 +12,30 @@
   function formatTime(timestamp: Date): string {
     if (!timestamp) return '';
     return new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // 메시지 ID로부터 Scene ID를 파싱하는 함수
+  function getSceneIdFromMessage(msg: ChatMessage): number | null {
+    if (msg.id && typeof msg.id === 'string' && msg.id.startsWith('scene-img-')) {
+      const parsedId = parseInt(msg.id.replace('scene-img-', ''));
+      return isNaN(parsedId) ? null : parsedId;
+    }
+    return null;
+  }
+
+  // 수정 버튼 클릭 핸들러
+  function openEditor() {
+    const sceneId = getSceneIdFromMessage(message);
+    if (sceneId && message.imageUrl) {
+      imageEditorModalState.set({
+        isOpen: true,
+        sceneId: sceneId,
+        imageUrl: message.imageUrl
+      });
+    } else {
+      console.warn("This image cannot be edited.", message);
+      alert("이 이미지는 수정할 수 없는 타입입니다.");
+    }
   }
 </script>
 
@@ -61,11 +87,23 @@
       <div class="text-sm prose prose-invert max-w-none">{@html marked(message.text || '')}</div>
       
       {#if message.imageUrl}
-        <img
-          src={message.imageUrl}
-          alt="AI generated illustration"
-          class="mt-2 rounded-lg max-w-full h-auto max-h-48 object-contain shadow-lg border-2 border-slate-600"
-        />
+        <!-- 'relative group'을 이곳으로 옮겨와서 이미지와 버튼을 하나로 묶습니다. -->
+        <div class="mt-2 relative group">
+          <img
+            src={message.imageUrl}
+            alt="AI generated illustration"
+            class="rounded-lg max-w-full h-auto object-contain shadow-lg border-2 border-slate-600"
+          />
+          <!-- 수정 버튼은 이 div 내부에 위치하여 이미지 위에 나타납니다. -->
+          <button
+            on:click={openEditor}
+            class="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Edit Image"
+          >
+            <!-- Icon 컴포넌트의 name을 pencilEdit으로 가정했습니다. 실제 이름에 맞게 수정해주세요. -->
+            <Icon name="pencilEdit" className="w-5 h-5" /> 
+          </button>
+        </div>
       {/if}
 
       <!-- 2. AI가 스트리밍 중일 때만 표시되는 로딩 표시 -->
