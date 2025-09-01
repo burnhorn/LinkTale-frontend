@@ -61,10 +61,7 @@
     ctx.drawImage(backgroundImage, 0, 0, canvasElement.width, canvasElement.height);
   }
 
-  // --- 기존의 나머지 스크립트 코드는 그대로 유지합니다 ---
-
   const getCoordinates = (e: MouseEvent | TouchEvent) => {
-    // ... (기존 코드와 동일)
     const rect = canvasElement.getBoundingClientRect();
     const scaleX = canvasElement.width / rect.width;
     const scaleY = canvasElement.height / rect.height;
@@ -74,7 +71,6 @@
   };
 
   const startDrawing = (e: MouseEvent | TouchEvent) => {
-    // ... (기존 코드와 동일)
     const ctx = canvasElement.getContext('2d');
     if (!ctx) return;
     const { x, y } = getCoordinates(e);
@@ -84,7 +80,6 @@
   };
 
   const draw = (e: MouseEvent | TouchEvent) => {
-    // ... (기존 코드와 동일)
     if (!isDrawing) return;
     e.preventDefault();
     const ctx = canvasElement.getContext('2d');
@@ -117,7 +112,6 @@
   }
 
   function handleFileUpload(e: Event) {
-    // ... (기존 코드와 동일)
     const input = e.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const reader = new FileReader();

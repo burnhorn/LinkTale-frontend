@@ -151,6 +151,8 @@ class WebSocketService {
     }
 
     private handleStreamMessage(parsed: any) {
+        // ★★★ 디버깅 포인트 1: 모든 이벤트를 무조건 출력 ★★★
+        // console.log('[WebSocket Received]', parsed); 
         switch (parsed.event) {
         case 'token':
           chatMessages.updateLastAiMessage(parsed.data, parsed.node_name);
@@ -161,6 +163,9 @@ class WebSocketService {
         case 'image_generated': { // case 블록 내에서 변수 선언을 위해 중괄호 사용
           const { image_url, image_caption, scene_id } = parsed.data;
           
+          // ★★★ 디버깅 포인트 2: image_generated 이벤트의 scene_id 값 확인 ★★★
+          // console.log(`[Event: image_generated] Received scene_id: ${scene_id}, Type: ${typeof scene_id}`);
+
           // chatMessages 스토어에 새로운 AI 이미지 메시지를 '추가'합니다.
           // 이 메시지는 나중에 'scenes_updated' 이벤트로 ID가 업데이트 될 것입니다.
           chatMessages.addAiImageMessage(image_url, image_caption || '', scene_id);
@@ -172,6 +177,9 @@ class WebSocketService {
         case 'scenes_updated': {
           const { scenes } = parsed.data; // 백엔드로부터 받은 장면 목록 전체
           
+          // ★★★ 디버깅 포인트 3: scenes_updated 이벤트의 데이터 전체 확인 ★★★
+          // console.log('[Event: scenes_updated] Received scenes data:', scenes);
+
           // storyScenes 스토어를 최신 상태로 업데이트합니다.
           // 책장(Bookshelf)이나 스토리 리더(StoryReader)가 이 데이터를 사용합니다.
           storyScenes.initializeScenes(scenes);

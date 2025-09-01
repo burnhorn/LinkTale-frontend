@@ -18,6 +18,11 @@
   function getSceneIdFromMessage(msg: ChatMessage): number | null {
     if (msg.id && typeof msg.id === 'string' && msg.id.startsWith('scene-img-')) {
       const parsedId = parseInt(msg.id.replace('scene-img-', ''));
+      
+      // DB의 고유 ID (예: 'scene-img-168')에서 숫자 부분만 추출
+      // ★★★ 디버깅 포인트 8: 추출된 sceneIdNumber 확인 ★★★
+      // console.log(`Opening editor for sceneIdNumber: ${parsedId}`);
+      
       return isNaN(parsedId) ? null : parsedId;
     }
     return null;

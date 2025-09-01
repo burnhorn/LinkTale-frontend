@@ -146,41 +146,56 @@ function createChatMessageStore() {
     },
     
     // ✅ 1. 'addAiImageMessage' 함수를 수정하여 'scene_id'를 받도록 변경
-    addAiImageMessage: (imageUrl: string, textContent: string, sceneNumber: number) => {
-      const newImageMessage: ChatMessage = {
-        // ID를 임시 형식으로 만들고,
-        id: `temp-scene-num-${sceneNumber}`, 
-        sender: 'ai' as const,
-        text: textContent,
-        imageUrl: imageUrl,
-        isLoading: false,
-        timestamp: new Date(),
-        // sceneId 필드를 추가하여 나중에 진짜 ID를 찾을 단서로 남깁니다.
-        sceneId: sceneNumber, 
-      };
-      update(messages => [...messages, newImageMessage]);
-    },
+    addAiImageMessage: (imageUrl: string, textContent: string, sceneDBId: number) => {
+    const newImageMessage: ChatMessage = {
+      // ID를 임시 형식으로 만들고,
+      id: `temp-scene-id-${sceneDBId}`, 
+      sender: 'ai' as const,
+      text: textContent,
+      imageUrl: imageUrl,
+      isLoading: false,
+      timestamp: new Date(),
+      // sceneId 필드에 DB의 고유 ID를 저장
+      sceneId: sceneDBId, 
+    };
+    update(messages => [...messages, newImageMessage]);
+  },
 
-    // ✅ 2. 'syncWithScenes' 함수를 새로 추가 (DB 저장 완료 후 정상적인 scenes id 프-백 동기화용)
-    syncWithScenes: (scenes: Scene[]) => {
-      update(messages => {
-        return messages.map(msg => {
-          if (msg.sceneId && typeof msg.id === 'string' && msg.id.startsWith('temp-scene-num-')) {
-            const matchingScene = scenes.find(s => s.scene_number === msg.sceneId);
+  // ✅ 'syncWithScenes' 함수도 DB ID를 기준으로 동작하도록 확인
+  syncWithScenes: (scenes: Scene[]) => {
+    update(messages => {
+      const newMessages = [...messages];
+      let hasChanges = false;
+
+      for (let i = 0; i < newMessages.length; i++) {
+        const msg = newMessages[i];
+        // msg.sceneId에 DB ID가 들어있으므로, scene.id와 비교
+        if (msg.sceneId && msg.id.startsWith('temp-scene-id-')) {
+          const matchingScene = scenes.find(s => s.id === msg.sceneId);
+          if (matchingScene) {
+            // ID를 교체
+            newMessages[i] = { ...msg, id: `scene-img-${matchingScene.id}` };
+
+            const guideMessage: ChatMessage = {
+              id: `scene-${matchingScene.id}`,
+              sender: 'ai',
+              text: `${matchingScene.scene_number}번째 장면을 감상해 보세요!\n(이미지를 누르면 변경도 가능해요)🎨\n`,
+              imageUrl: null,
+              timestamp: new Date(matchingScene.created_at),
+              isSystem: false,
+              // 이 안내 메시지에도 sceneId를 추가해주는 것이 좋습니다.
+              sceneId: matchingScene.id, 
+            };
+            newMessages.splice(i, 0, guideMessage);
             
-            if (matchingScene) {
-              console.log(`[Sync] 메시지 ID 동기화: ${msg.id} -> scene-img-${matchingScene.id}`);
-              return {
-                ...msg,
-                // ID를 '임시 출입증'에서 '주민등록번호'로 교체합니다!
-                id: `scene-img-${matchingScene.id}` 
-              };
-            }
+            hasChanges = true;
+            break; 
           }
-          return msg;
-        });
-      });
-    },
+        }
+      }
+      return hasChanges ? newMessages : messages;
+    });
+  },
 
     // // `image_generated` 이벤트를 처리하기 위한 함수
     // addAiImageMessage: (imageUrl: string, textContent: string) => {
