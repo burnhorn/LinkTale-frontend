@@ -8,7 +8,7 @@
             <div class="space-y-8 xl:col-span-1">
                 <div class="flex items-center">
                     <Icon name="worldExplorer" className="h-8 w-8 text-purple-600" />
-                    <span class="ml-3 text-2xl font-bold font-display text-gray-900">SparkWeaver AI</span>
+                    <span class="ml-3 text-2xl font-bold font-display text-gray-900">LinkTale AI</span>
                 </div>
                 <p class="text-gray-500 text-base">
                     최신 AI를 사용하여 마법 같은 맞춤형 어린이 동화책를 만들어 보세요. 아이의 상상력을 자극하고 독서 습관을 기르는 데 도움을 줍니다.
@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="mt-12 border-t border-gray-200 pt-8">
-            <p class="text-base text-gray-400 xl:text-center">&copy; {new Date().getFullYear()} SparkWeaver AI. All rights reserved.</p>
+            <p class="text-base text-gray-400 xl:text-center">&copy; {new Date().getFullYear()} LinkTale AI. All rights reserved.</p>
         </div>
     </div>
 </footer>

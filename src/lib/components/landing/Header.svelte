@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center h-16">
       <div class="flex-shrink-0 flex items-center">
         <Icon name="worldExplorer" className="h-8 w-8 text-purple-600" />
-        <span class="ml-3 text-2xl font-bold font-display text-gray-900">SparkWeaver AI</span>
+        <span class="ml-3 text-2xl font-bold font-display text-gray-900">LinkTale AI</span>
       </div>
       <div class="hidden md:flex items-center space-x-8">
         <a href="#features" class="text-base font-medium text-gray-500 hover:text-gray-900 transition-colors">Features</a>

@@ -52,7 +52,7 @@
 >
 	<a href="/" class="flex items-center space-x-2 px-4 pb-4 group">
 		<Icon name="logo" className="h-8 w-8 text-cyan-400 group-hover:animate-pulse" />
-		<span class="text-xl font-bold">Pel-World</span>
+		<span class="text-xl font-bold">LinkTale</span>
 	</a>
 
 	<div class="flex-grow space-y-1">
@@ -63,12 +63,12 @@
 			active={$page.url.pathname.startsWith('/create')}
 		/>
 		<NavButton on:click={handleDownloadPdf} iconName="pdf" label="PDF로 저장" />
-		<NavButton
+		<!-- <NavButton
 			on:click={handleAudioAction}
 			iconName="audio"
 			label={$isAudioLoading ? '생성 중...' : $audioStore.src ? '오디오 드라마 듣기' : '오디오 드라마 만들기'}
 			disabled={$isAudioLoading}
-		/>
+		/> -->
 
 		<div class="px-4 pt-6 pb-2">
 			<button

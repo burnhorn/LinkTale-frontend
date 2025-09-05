@@ -13,7 +13,7 @@
 		>
 			<div class="mx-auto max-w-md text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
 				<h2 class="text-3xl font-bold font-display tracking-tight sm:text-4xl">
-					우리 아이의 마법 같은 이야기를<br /> 만들 준비가 되셨나요?
+					우리 아이의 마법같은 이야기<br /> 만들 준비가 되셨나요?
 				</h2>
 				<p class="mt-6 text-lg leading-8 text-purple-100">
 					아이의 창의력과 상상력을 펼쳐 보세요! 결제 없이 무료로 첫 번째 이야기를 만들어 볼 수
