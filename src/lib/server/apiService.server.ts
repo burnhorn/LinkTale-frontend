@@ -12,15 +12,15 @@ const API_BASE = '/api/v1'; // API 기본 경로와 버전을 변수로 관리
 
 async function fetchData<T>(mockData: T, apiPath: string): Promise<T> {
   if (useMock) {
-    console.log(`[Mock] Fetching data for: ${apiPath}`);
+    // console.log(`[Mock] Fetching data for: ${apiPath}`);
     await new Promise(resolve => setTimeout(resolve, 100));
     return mockData;
   } else {
-    console.log(`[API] Fetching data from: ${apiPath}`);
+    // console.log(`[API] Fetching data from: ${apiPath}`);
     const response = await fetch(`${PRIVATE_BACKEND_API_URL}${apiPath}`);
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`API Error: ${response.status} ${response.statusText}`, errorBody);
+      // console.error(`API Error: ${response.status} ${response.statusText}`, errorBody);
       throw new Error(`Failed to fetch from ${apiPath}`);
     }
     return response.json();

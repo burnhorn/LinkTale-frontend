@@ -51,7 +51,7 @@ class WebSocketService {
         if (!browser) return; // 💡 SSR 환경에서는 아무것도 하지 않습니다.
 
         if (get(isReady) || this.isConnecting) {
-            console.log("Start cancelled: already ready or connection in progress.");
+            // console.log("Start cancelled: already ready or connection in progress.");
             return;
         }
         
@@ -119,7 +119,7 @@ class WebSocketService {
                     const parsed = JSON.parse(event.data);
                     if (parsed && parsed.event === 'session_created' && parsed.session_id) {
                         cleanup();
-                        console.log(`Received session ID: ${parsed.session_id}`);
+                        // console.log(`Received session ID: ${parsed.session_id}`);
                         if (this.socket) {
                             this.socket.onmessage = this.handleMainMessages;
                         }
@@ -239,11 +239,12 @@ class WebSocketService {
           if (token) headers['Authorization'] = `Bearer ${token}`;
           
           const response = await fetch(`${BASE_HTTP_URL}/history/${this.sessionId}`, { headers });
+          // console.log("history:", response)
           if (!response.ok) throw new Error(`Failed to fetch history: ${response.statusText}`);
           
           // 1. API 응답을 새로운 ChatHistoryResponse 타입으로 받습니다.
           const responseData: ChatHistoryResponse = await response.json();
-          // console.log(responseData)
+          // console.log("ChatHistoryResponse:", responseData)
           // 2. 응답 데이터가 유효한지 확인합니다.
           if (responseData && (responseData.logs?.length || responseData.scenes?.length)) {
         
@@ -270,7 +271,7 @@ class WebSocketService {
               }
           }
       } catch (error) {
-          console.error("Fetch history error:", error); // 디버깅을 위해 콘솔 에러 추가
+          // console.error("Fetch history error:", error); // 디버깅을 위해 콘솔 에러 추가
           chatMessages.addSystemMessage("이전 대화 기록을 불러오는 데 실패했습니다.");
       } finally {
           globalIsLoading.set(false);
@@ -288,7 +289,7 @@ class WebSocketService {
   
     public async resetSession(isLogout: boolean = false) {
       if (!browser) return;
-      console.log(`Resetting session. Is it for logout? ${isLogout}`);
+      // console.log(`Resetting session. Is it for logout? ${isLogout}`);
       globalIsLoading.set(true);
 
       this.disconnect(); 
@@ -320,7 +321,7 @@ class WebSocketService {
 
   public sendMessage(message: { content: string; action?: string }) {
       if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-        console.error("WebSocket is not connected.");
+        // console.error("WebSocket is not connected.");
         chatMessages.addSystemMessage("서버와 연결되어 있지 않습니다. 페이지를 새로고침해주세요.");
         return;
       }
@@ -342,7 +343,7 @@ class WebSocketService {
 
         if (!response.ok) {
             // Don't throw an error, just log it, as this is a background fetch.
-            console.error(`Failed to fetch latest audio: ${response.statusText}`);
+            // console.error(`Failed to fetch latest audio: ${response.statusText}`);
             return;
         }
         const data = await response.json();

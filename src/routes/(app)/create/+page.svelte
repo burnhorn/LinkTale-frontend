@@ -4,7 +4,7 @@
 
   function handlePageChange(pageIndex: number) {
     // This is a placeholder for actual page change logic
-    console.log('Page changed to:', pageIndex);
+    // console.log('Page changed to:', pageIndex);
   }
 </script>
 

@@ -217,7 +217,7 @@ function createChatMessageStore() {
         const targetMessageIndex = messages.findIndex(m => m.id === `scene-img-${sceneId}`);
         
         if (targetMessageIndex > -1) {
-          console.log(`[Store] 이미지 업데이트: scene-img-${sceneId}`);
+          // console.log(`[Store] 이미지 업데이트: scene-img-${sceneId}`);
           const newMessages = [...messages]; // 배열 복사 (불변성 유지)
           // 특정 메시지 객체만 복사 후 imageUrl을 교체
           newMessages[targetMessageIndex] = {

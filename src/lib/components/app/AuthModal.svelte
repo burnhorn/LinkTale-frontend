@@ -27,20 +27,20 @@
 	}
 
 	async function handleSubmit() {
-		console.log('[AuthModal] handleSubmit triggered. Mode:', mode);
+		// console.log('[AuthModal] handleSubmit triggered. Mode:', mode);
 		error = null;
 		isLoading = true;
 
 		try {
 			if (isLogin) {
-				console.log(`[AuthModal] Attempting login for email: ${email}`);
+				// console.log(`[AuthModal] Attempting login for email: ${email}`);
 				await loginAndSync(email, password);
-				console.log('[AuthModal] Login successful.');
+				// console.log('[AuthModal] Login successful.');
 				onClose(); // 성공 시 모달 닫기
 			} else {
-				console.log(`[AuthModal] Attempting to register user: ${username}`);
+				// console.log(`[AuthModal] Attempting to register user: ${username}`);
 				await registerUser(username, email, password);
-				console.log('[AuthModal] Registration successful. Switching to login mode.');
+				// console.log('[AuthModal] Registration successful. Switching to login mode.');
 				// 회원가입 성공 후 로그인 모드로 전환 또는 자동 로그인 처리
 				onSwitch('login');
 			}

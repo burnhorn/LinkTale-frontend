@@ -17,7 +17,7 @@
 
   // Svelte의 반응형 구문($:)을 사용하여 state.imageUrl이 변경될 때마다 자동으로 실행됩니다.
   $: if (canvasElement && state.isOpen && state.imageUrl) {
-    console.log('[ImageEditor] 이미지 로딩을 시작합니다:', state.imageUrl);
+    // console.log('[ImageEditor] 이미지 로딩을 시작합니다:', state.imageUrl);
     loadImageToCanvas(state.imageUrl);
   } else if (canvasElement && !state.isOpen) {
     // 모달이 닫히면 캔버스를 깨끗하게 정리합니다.
@@ -33,15 +33,15 @@
 
     // ✅ 2. 이미지 로딩이 성공했을 때 실행
     img.onload = () => {
-      console.log('[ImageEditor] 이미지 로딩 성공!');
+      // console.log('[ImageEditor] 이미지 로딩 성공!');
       backgroundImage = img;
       drawImageToCanvas();
     };
 
     // ✅ 3. 이미지 로딩 실패(주로 CORS 문제) 시 실행
     img.onerror = () => {
-      console.error('[ImageEditor] 이미지 로딩 실패! CORS 정책을 확인하세요. 서버에서 Access-Control-Allow-Origin 헤더를 보내고 있는지 확인해야 합니다.');
-      alert('이미지를 불러오는 데 실패했습니다. 서버의 CORS 설정을 확인해야 할 수 있습니다.');
+      // console.error('[ImageEditor] 이미지 로딩 실패! CORS 정책을 확인하세요. 서버에서 Access-Control-Allow-Origin 헤더를 보내고 있는지 확인해야 합니다.');
+      // alert('이미지를 불러오는 데 실패했습니다. 서버의 CORS 설정을 확인해야 할 수 있습니다.');
       // 실패 시에도 사용자가 그림을 그릴 수 있도록 흰 배경을 유지합니다.
       clearCanvas(true);
     };
@@ -52,7 +52,7 @@
     const ctx = canvasElement.getContext('2d');
     if (!ctx) return;
     
-    console.log('[ImageEditor] 캔버스에 이미지를 그립니다.');
+    // console.log('[ImageEditor] 캔버스에 이미지를 그립니다.');
     // 캔버스를 먼저 흰색으로 채웁니다. (투명한 PNG 이미지를 대비)
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
